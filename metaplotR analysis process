@@ -1,0 +1,19 @@
+#The following is an explanation of the metaplotR drawing process. It needs to be installed when running under a Linux system.
+
+#1. Sort ac4c peak, the command line is as follows
+sort -k1,1 -k2,2n control_syn_sae.bed > control_syn_sae.sort.bed
+sort -k1,1 -k2,2n control_homo.bed > control_homo.sort.bed
+
+#2. Use bedtools intersectBed to take the intersection of the sorted peak bed file with the reference bed file with the following command line:
+intersectBed -a control_syn_sae.sort.bed -b mm10_annot.sorted.bed -sorted -wo -s > annot_control_syn_sae.sorted.bed
+intersectBed -a control_homo.sort.bed -b mm10_annot.sorted.bed -sorted -wo -s > annot_control_homo.sorted.bed
+
+#3. identifies the region of the transcript in which the user supplied sites fall and converts the transcriptomic coordinates 
+#to metagene coordinates.
+perl rel_and_abs_dist_calc.pl --bed annot_control_syn_sae.sorted.bed --regions mm10.region_sizes.txt > control_syn_sae.dist.measures.txt
+perl rel_and_abs_dist_calc.pl --bed annot_control_homo.sorted.bed --regions mm10.region_sizes.txt > control_homo.dist.measures.txt
+
+#Draw a graph based on the rel_location column data in the Learned-syn.dist.measures.txt file.
+#If the rel_location value is 0~1, it is 5UTR, 1~2 is cds, and 2~3 is 3UTR.
+
+#MetaplotR analyzes the original URL：https://github.com/olarerin/metaPlotR
