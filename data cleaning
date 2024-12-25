@@ -1,0 +1,131 @@
+# 1. Data Loading
+
+## 1.1 Loading `SE.txt` File
+import pandas as pd
+
+file_se = r'SE.txt'
+data_se = pd.read_csv(file_se, sep='\t')
+print(data_se.head())
+
+## 1.2 Loading KO mRNA Data
+cko_mrna_path = r'Intersection.xlsx'
+
+cko_mrna_up = pd.read_excel(cko_mrna_path,sheet_name=0,header=14)
+cko_mrna_down = pd.read_excel(cko_mrna_path,sheet_name=1,header=14)
+print(cko_mrna_up.head())
+print(cko_mrna_down.head())
+
+# 2. Data Preparation and Merging
+
+## 2.1 Combine Up and Downregulated Data
+cko_mrna = pd.concat([cko_mrna_up, cko_mrna_down], axis=0)
+print(cko_mrna.head())
+
+# 3. Analysis of Differentially Acetylated Sites
+
+## 3.1 Loading and Merging Data for `d1`, `d6`, and `d20` sites
+file_d6 = r'd6Acetylated_RNA_sites.mRNA.xlsx'
+data_d6c = pd.read_excel(file_d6, sheet_name=0, header=24)
+data_d6t = pd.read_excel(file_d6, sheet_name=1, header=24)
+
+file_d1d20 = r'd1d20Acetylated_RNA_sites.mRNA.xlsx'
+data_d1c = pd.read_excel(file_d1d20, sheet_name=1, header=24)
+data_d1t = pd.read_excel(file_d1d20, sheet_name=0, header=24)
+data_d20c = pd.read_excel(file_d1d20, sheet_name=3, header=24)
+data_d20t = pd.read_excel(file_d1d20, sheet_name=2, header=24)
+
+print(data_d6c.head())
+print(data_d6t.head())
+print(data_d1c.head())
+print(data_d1t.head())
+print(data_d20c.head())
+print(data_d20t.head())
+
+## 3.2 Merging Data with `SE.txt`
+data_d1c_se = pd.merge(data_d1c, data_se, how='inner', left_on='GeneName', right_on='SE')
+data_d1t_se = pd.merge(data_d1t, data_se, how='inner', left_on='GeneName', right_on='SE')
+data_d20c_se = pd.merge(data_d20c, data_se, how='inner', left_on='GeneName', right_on='SE')
+data_d20t_se = pd.merge(data_d20t, data_se, how='inner', left_on='GeneName', right_on='SE')
+data_d6c_se = pd.merge(data_d6c, data_se, how='inner', left_on='GeneName', right_on='SE')
+data_d6t_se = pd.merge(data_d6t, data_se, how='inner', left_on='GeneName', right_on='SE')
+
+print(data_d1c_se.head())
+print(data_d1t_se.head())
+print(data_d20c_se.head())
+print(data_d20t_se.head())
+print(data_d6c_se.head())
+print(data_d6t_se.head())
+
+# 4. Data Grouping and Summarization
+
+## 4.1 Summing Grouped Data
+data_d1c_se_sum = data_d1c_se.groupby('GeneName').sum()
+data_d1t_se_sum = data_d1t_se.groupby('GeneName').sum()
+data_d20c_se_sum = data_d20c_se.groupby('GeneName').sum()
+data_d20t_se_sum = data_d20t_se.groupby('GeneName').sum()
+data_d6c_se_sum = data_d6c_se.groupby('GeneName').sum()
+data_d6t_se_sum = data_d6t_se.groupby('GeneName').sum()
+
+print(data_d1c_se_sum.head())
+print(data_d1t_se_sum.head())
+print(data_d20c_se_sum.head())
+print(data_d20t_se_sum.head())
+print(data_d6c_se_sum.head())
+print(data_d6t_se_sum.head())
+
+# 5. Prefixing Columns for Identification
+
+## 5.1 Adding Prefixes to Columns
+data_d1c_se_sum_flag = data_d1c_se_sum.add_prefix('d1c_')
+data_d1t_se_sum_flag = data_d1t_se_sum.add_prefix('d1t_')
+data_d6c_se_sum_flag = data_d6c_se_sum.add_prefix('d6c_')
+data_d6t_se_sum_flag = data_d6t_se_sum.add_prefix('d6t_')
+data_d20c_se_sum_flag = data_d20c_se_sum.add_prefix('d20c_')
+data_d20t_se_sum_flag = data_d20t_se_sum.add_prefix('d20t_')
+
+print(data_d1c_se_sum_flag.head())
+print(data_d1t_se_sum_flag.head())
+print(data_d6c_se_sum_flag.head())
+print(data_d6t_se_sum_flag.head())
+print(data_d20c_se_sum_flag.head())
+print(data_d20t_se_sum_flag.head())
+
+# 6. Calculating Fold Change (FC) and Log2FC
+
+## 6.1 Calculating FC and log2FC
+import numpy as np
+
+data_d1ct_se_sum_flag = pd.concat([data_d1c_se_sum_flag, data_d1t_se_sum_flag], axis=1, join='outer')
+data_d1ct_se_sum_flag['d1c_fold_enrichment'] = data_d1ct_se_sum_flag['d1c_fold_enrichment'].fillna(1)
+data_d1ct_se_sum_flag['d1t_fold_enrichment'] = data_d1ct_se_sum_flag['d1t_fold_enrichment'].fillna(1)
+data_d1ct_se_sum_flag['d1ct_FC'] = data_d1ct_se_sum_flag['d1t_fold_enrichment'] / data_d1ct_se_sum_flag['d1c_fold_enrichment']
+data_d1ct_se_sum_flag['d1ct_log2FC'] = np.log2(data_d1ct_se_sum_flag['d1ct_FC'])
+
+print(data_d1ct_se_sum_flag.head())
+
+## 6.2 Calculating FC and log2FC for d6 and d20 data
+# Calculating FC and log2FC for d20 data
+data_d20ct_se_sum_flag = pd.concat([data_d20c_se_sum_flag, data_d20t_se_sum_flag], axis=1, join='outer')
+data_d20ct_se_sum_flag['d20c_fold_enrichment'] = data_d20ct_se_sum_flag['d20c_fold_enrichment'].fillna(1)
+data_d20ct_se_sum_flag['d20t_fold_enrichment'] = data_d20ct_se_sum_flag['d20t_fold_enrichment'].fillna(1)
+data_d20ct_se_sum_flag['d20ct_FC'] = data_d20ct_se_sum_flag['d20t_fold_enrichment'] / data_d20ct_se_sum_flag['d20c_fold_enrichment']
+data_d20ct_se_sum_flag['d20ct_log2FC'] = np.log2(data_d20ct_se_sum_flag['d20ct_FC'])
+
+print(data_d20ct_se_sum_flag.head())
+
+# 7. Merging KO mRNA Data with Acetylation Data
+
+## 7.1 Merge KO mRNA Data with Fold Change Results
+merged_data = pd.merge(cko_mrna, data_d1ct_se_sum_flag[['d1ct_FC', 'd1ct_log2FC']], how='left', left_on='GeneName', right_index=True)
+merged_data = pd.merge(merged_data, data_d6ct_se_sum_flag[['d6ct_FC', 'd6ct_log2FC']], how='left', left_on='GeneName', right_index=True)
+merged_data = pd.merge(merged_data, data_d20ct_se_sum_flag[['d20ct_FC', 'd20ct_log2FC']], how='left', left_on='GeneName', right_index=True)
+
+print(merged_data.head())
+
+# 8. Final Data Export
+
+## 8.1 Save the final merged dataset to CSV
+final_file_path = r'H:\path_to_output_folder\final_output.csv'
+merged_data.to_csv(final_file_path, index=False)
+
+print(f"Final output saved to: {final_file_path}")
